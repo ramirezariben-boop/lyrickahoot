@@ -24,36 +24,50 @@ function broadcastToPlayers(room, msg) {
 }
 
 const server = http.createServer(async (req, res) => {
-  if (req.method === "POST" && req.url === "/api/pay-mxp") {
-    let body = "";
-    req.on("data", chunk => (body += chunk));
-    req.on("end", async () => {
-      try {
-        const parsed = JSON.parse(body);
 
-        const response = await fetch(
-          "https://classroom-trading.ariiben.com/api/update-multiple",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(parsed)
-          }
-        );
+if (req.method === "OPTIONS") {
+  res.writeHead(204, {
+    "Access-Control-Allow-Origin": "https://lyrickahoot.ariiben.com",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+  });
+  return res.end();
+}
 
-        const data = await response.text();
+if (req.method === "POST" && req.url === "/api/pay-mxp") {
+  let body = "";
+  req.on("data", chunk => (body += chunk));
+  req.on("end", async () => {
+    try {
+      const parsed = JSON.parse(body);
 
-        res.writeHead(response.status, {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*"
-        });
-        res.end(data);
-      } catch (e) {
-        res.writeHead(500);
-        res.end(JSON.stringify({ error: "MXP proxy failed" }));
-      }
-    });
-    return;
-  }
+      const response = await fetch(
+        "https://classroom-trading.ariiben.com/api/update-multiple",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(parsed)
+        }
+      );
+
+      const data = await response.text();
+
+      res.writeHead(response.status, {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "https://lyrickahoot.ariiben.com",
+        "Access-Control-Allow-Headers": "Content-Type",
+      });
+      res.end(data);
+    } catch (e) {
+      res.writeHead(500, {
+        "Access-Control-Allow-Origin": "https://lyrickahoot.ariiben.com",
+      });
+      res.end(JSON.stringify({ error: "MXP proxy failed" }));
+    }
+  });
+  return;
+}
+
 
   if (req.url === "/health") {
     res.writeHead(200);
