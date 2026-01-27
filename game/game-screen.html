@@ -1404,6 +1404,13 @@ async function finishGame() {
 
   setHostControlsEnabled(false);
 
+  if (Object.keys(gameTotals).length === 0) {
+    alert("No hay puntos que pagar en este juego.");
+    finishingGame = false;
+    setHostControlsEnabled(true);
+    return;
+  }
+
   try {
     await payMXP();
   } catch (e) {

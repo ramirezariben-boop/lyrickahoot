@@ -511,11 +511,14 @@ function handleGameMessages(e) {
   // =====================
   // RESET DE SALA
   // =====================
-  if (msg.type === "GAME_RESET") {
-    sessionStorage.removeItem("playerProfile");
-    location.reload();
-    return;
-  }
+if (msg.type === "GAME_RESET") {
+  sessionStorage.removeItem("playerProfile");
+  sessionStorage.removeItem("totalPoints");
+  sessionStorage.removeItem("answeredWordId");
+  sessionStorage.removeItem("currentQuestion");
+  location.reload();
+}
+
 }
 
 
