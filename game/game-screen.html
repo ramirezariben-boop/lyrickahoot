@@ -1358,7 +1358,9 @@ function isQuestionActive() {
   return gameState.questionOpen && currentQuestionState;
 }
 
-// Pago de puntos
+// ================================
+// 💰 PAGO DE PUNTOS
+// ================================
 
 const MAX_MXP = 6;
 const QUESTIONS_PER_GAME = 14;
@@ -1377,11 +1379,38 @@ function computeMXP() {
   }));
 }
 
+function normalizeChanges(changes) {
+  const acc = {};
 
+  for (const { id, delta } of changes) {
+    if (!acc[id]) acc[id] = 0;
+    acc[id] += delta;
+  }
 
-ync function payMXP() {
+  return Object.entries(acc).map(([id, delta]) => ({
+    id,
+    delta
+  }));
+}
 
+async function payMXP() {
+  const changes = normalizeChanges(computeMXP());
 
+  console.log("💰 MXP CHANGES →", changes);
+
+  const res = await fetch("/api/pay-mxp", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ changes })
+  });
+
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error("MXP API error: " + txt);
+  }
+
+  return res.json();
+}
 
 async function finishGame() {
   if (finishingGame) return;
@@ -1404,42 +1433,36 @@ async function finishGame() {
   try {
     await payMXP();
   } catch (e) {
-   finishingGame = false;
-   setHostControlsEnabled(true); // 🔓 rollback
-   alert("Falló el pago MXP. No cierro la sala.");
-   return;
-}
+    finishingGame = false;
+    setHostControlsEnabled(true);
+    alert("Falló el pago MXP. No cierro la sala.");
+    return;
+  }
 
+  channel.send(JSON.stringify({
+    type: "HOST_BROADCAST",
+    payload: { type: "GAME_RESET", sig: HOST_SIGNATURE }
+  }));
 
-  // 🔥 matar sala
-channel.send(JSON.stringify({
-  type: "HOST_BROADCAST",
-  payload: { type: "GAME_RESET", sig: HOST_SIGNATURE }
-}));
-
-  // 🔁 nuevo pin
   ROOM_CODE = generateRoomCode();
   sessionStorage.setItem("ROOM_CODE", ROOM_CODE);
-
   bindChannel(ROOM_CODE, WS_URL);
 
-
-  // limpiar estado
   connectedPlayers.clear();
   answeredPlayers.clear();
   Object.keys(gameState.answers).forEach(k => delete gameState.answers[k]);
   gameState.expectedPlayers.clear();
   gameState.openedQuestions.clear();
-  Object.keys(gameTotals).forEach(k => delete gameTotals[k]); // 🧹 reset acumulador
+  Object.keys(gameTotals).forEach(k => delete gameTotals[k]);
 
   document.getElementById("roomCode").textContent =
     `Código: ${ROOM_CODE}`;
-
   document.getElementById("status").textContent =
     "💰 MXP pagados. Nueva sala lista.";
 
   setHostControlsEnabled(true);
 }
+
 
 function normalizeChanges(changes) {
   const acc = {};
