@@ -509,23 +509,22 @@ if (currentQuestionState) {
 const playersModal = document.getElementById("playersModal");
 const playersList = document.getElementById("playersList");
 
-bindChannel(ROOM_CODE);
+bindChannel(ROOM_CODE, WS_URL);
+
 setTimeout(updateStatus, 500);
 
-function bindChannel(newRoomCode) {
+function bindChannel(newRoomCode, wsUrl) {
   try { channel?.close(); } catch (_) {}
 
-  channel = new WebSocket(WS_URL);
+  channel = new WebSocket(wsUrl);
 
   channel.onopen = () => {
-    // 🔑 handshake: aquí dices qué sala eres y que eres HOST
     channel.send(JSON.stringify({
       type: "HELLO",
       role: "HOST",
       roomCode: newRoomCode
     }));
 
-    // opcional: reclamar sala (equivalente a HOST_CLAIM)
     channel.send(JSON.stringify({
       type: "HOST_BROADCAST",
       payload: { type: "HOST_CLAIM" }
@@ -538,6 +537,7 @@ function bindChannel(newRoomCode) {
     handleHostMessages({ data: msg });
   };
 }
+
 
 
 
@@ -1337,7 +1337,8 @@ Object.keys(gameState.answers).forEach(k => delete gameState.answers[k]);
   sessionStorage.setItem("ROOM_CODE", ROOM_CODE);
 
   // 3. Nuevo canal
-  bindChannel(ROOM_CODE);
+  bindChannel(ROOM_CODE, WS_URL);
+
 
   // 4. Reset estado interno
   connectedPlayers.clear();
@@ -1423,7 +1424,8 @@ channel.send(JSON.stringify({
   ROOM_CODE = generateRoomCode();
   sessionStorage.setItem("ROOM_CODE", ROOM_CODE);
 
-  bindChannel(ROOM_CODE);
+  bindChannel(ROOM_CODE, WS_URL);
+
 
   // limpiar estado
   connectedPlayers.clear();
