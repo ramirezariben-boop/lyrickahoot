@@ -322,6 +322,12 @@
    ============================ */
 import { getSpeedBonus } from "../shared/utils.js";
 
+const WS_URL =
+  location.hostname === "localhost"
+    ? "ws://localhost:3000"
+    : "wss://lyrickahoot.onrender.com";
+
+
   const HOST_PIN = "7391";
 
 /* ============================
@@ -505,12 +511,6 @@ const playersList = document.getElementById("playersList");
 
 bindChannel(ROOM_CODE);
 setTimeout(updateStatus, 500);
-
-const WS_URL =
-  location.hostname === "localhost"
-    ? "ws://localhost:3000"
-    : "wss://lyrickahoot.onrender.com";
-
 
 function bindChannel(newRoomCode) {
   try { channel?.close(); } catch (_) {}
