@@ -408,11 +408,10 @@ const HOST_ALLOWED = new Set([
   "PLAYER_JOIN",
   "PLAYER_REJOIN",
   "PLAYER_ALIVE",
+  "PLAYER_LEAVE",
   "ANSWER",
   "HOST_CLAIM"
 ]);
-
-
 
 let player;
 let lyrics, exercise, rules;
@@ -507,8 +506,11 @@ const playersList = document.getElementById("playersList");
 bindChannel(ROOM_CODE);
 setTimeout(updateStatus, 500);
 
-const WS_URL = "ws://localhost:3000"; 
-// luego será wss://tuservicio.onrender.com
+const WS_URL =
+  location.hostname === "localhost"
+    ? "ws://localhost:3000"
+    : "wss://lyrickahoot.onrender.com";
+
 
 function bindChannel(newRoomCode) {
   try { channel?.close(); } catch (_) {}
@@ -568,6 +570,16 @@ if (sessionStorage.getItem("HOST_AUTH") !== "ok") return;
   // ===============================
   // PLAYER JOIN / REJOIN / ALIVE
   // ===============================
+
+if (msg.type === "PLAYER_LEAVE") {
+  removePlayer(msg.user);
+  updateStatus();
+  if (!playersModal.classList.contains("hidden")) {
+    renderPlayersList();
+  }
+  return;
+}
+
 if (
   msg.type === "PLAYER_JOIN" ||
   msg.type === "PLAYER_REJOIN" ||

@@ -247,8 +247,10 @@
 
 <script type="module">
 
-const WS_URL = "wss://TU-BACKEND-WS.onrender.com"; 
-// en local: ws://localhost:3000
+const WS_URL =
+  location.hostname === "localhost"
+    ? "ws://localhost:3000"
+    : "wss://lyrickahoot.onrender.com";
 
 
 let selectedEmoji = null;

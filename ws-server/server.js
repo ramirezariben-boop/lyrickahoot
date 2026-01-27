@@ -1,5 +1,5 @@
 import http from "http";
-import { WebSocketServer } from "ws";
+import { WebSocketServer, WebSocket } from "ws";
 
 const PORT = process.env.PORT || 3000;
 
@@ -14,7 +14,9 @@ function getRoom(code) {
 }
 
 function safeSend(ws, obj) {
-  if (ws && ws.readyState === ws.OPEN) ws.send(JSON.stringify(obj));
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify(obj));
+  }
 }
 
 function broadcastToPlayers(room, msg) {
@@ -79,12 +81,13 @@ wss.on("connection", (ws) => {
     }
 
   // Respuestas directas del PLAYER hacia el HOST
-  if (msg.type === "ANSWER") {
-    const room = rooms.get(ws.meta.roomCode);
-    if (!room) return;
-    safeSend(room.host, msg);
-    return;
-  }
+if (msg.type === "ANSWER") {
+  if (ws.meta.role !== "PLAYER") return;
+  const room = rooms.get(ws.meta.roomCode);
+  if (!room) return;
+  safeSend(room.host, msg);
+  return;
+}
 
     // Enrutamiento de mensajes del HOST hacia PLAYERS
     if (msg.type === "HOST_BROADCAST") {
