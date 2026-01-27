@@ -1,0 +1,1451 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Game Screen</title>
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <style>
+    body { font-family: system-ui, sans-serif; padding: 20px; background: #000; color: #fff;}
+    .line {
+      margin-bottom: 8px;
+      font-size: 1.2em;
+    }
+    .line.active {
+      background: #e0f7ff;
+      padding: 4px;
+      border-radius: 4px;
+    }
+.word {
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+.word.active {
+  background: #00e5ff;
+  color: #000;
+  font-weight: bold;
+  animation: pulse 0.6s ease-out;
+}
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(255, 213, 79, 0.7);
+  }
+  50% {
+    transform: scale(1.15);
+    box-shadow: 0 0 12px rgba(255, 213, 79, 0.9);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(255, 213, 79, 0);
+  }
+}
+
+#topBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+#status {
+  font-weight: bold;
+  color: #00e5ff;
+}
+
+
+#videoWrapper {
+  position: relative;
+  width: 560px;          /* base */
+  max-width: 100%;
+}
+
+/* Overlay de letra */
+#lyricsOverlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 10px 14px;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  color: white;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+/* Letras */
+#lyricsOverlay .line {
+  margin: 4px 0;
+  font-size: clamp(0.9rem, 2.2vw, 1.2rem);
+}
+
+#lyricsOverlay .line.active {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+/* Ranking */
+#scoreboard {
+  min-width: 200px;
+  background: #000;
+  border: 2px solid #00e5ff;
+  box-shadow: none;
+  padding: 12px;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+#layout {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+#videoColumn {
+  flex: 0 0 auto;
+}
+
+#main {
+  flex: 0 0 560px;
+}
+
+
+#rankingList {
+  padding-left: 20px;
+}
+
+#rankingList li {
+  color: #fff;
+  border-bottom: 1px solid rgba(255,255,255,0.15);
+  padding: 4px 0;
+}
+
+
+#hostControls {
+  margin-top: 10px;
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+
+#hostControls button {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid #00e5ff;
+  background: #000;
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+#hostControls button:hover {
+  background: rgba(0,229,255,0.1);
+  transform: scale(1.05);
+}
+
+#hostControls button:active {
+  transform: scale(0.95);
+}
+
+
+#optionsPreview {
+  margin-top: 14px;
+  font-size: 0.9em;
+}
+
+#optionsPreview ul {
+  padding-left: 18px;
+}
+
+/* ==================
+   MODAL WAITING-ROOM
+   ================== */
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-content {
+  background: #000;
+  color: #fff;
+  border: 2px solid #9c27b0;
+  padding: 20px;
+  border-radius: 12px;
+  min-width: 260px;
+  max-width: 600px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  text-align: left;
+}
+
+.modal-content h3 {
+  margin-top: 0;
+}
+
+#playersList {
+  list-style: none;
+  padding-left: 0;
+  margin: 10px 0 15px;
+
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 6px 12px;
+
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+
+#playersList li {
+  background: #000;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #9c27b0;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+/* ==================
+   NEON STYLES
+   ================== */
+
+.panel {
+  background: #000;
+  color: #fff;
+  border: 2px solid;
+  border-radius: 10px;
+  padding: 12px;
+}
+
+#scoreboard h3 {
+  margin-top: 0;
+  color: #00e5ff;
+}
+
+#optionsPreview {
+  border-top: 1px solid #ff9100;
+  margin-top: 12px;
+  padding-top: 8px;
+}
+
+#optionsPreview h4 {
+  color: #ff9100;
+}
+
+
+  </style>
+</head>
+<body>
+
+<div id="topBar">
+  <h3>Lyrickahoot! <span id="roomCode"></span></h3>
+  <div id="status"></div>
+</div>
+
+<div id="layout">
+  <!-- VIDEO + LETRA -->
+  <div id="videoColumn">
+    <div id="videoWrapper">
+      <div id="player"></div>
+
+      <!-- LETRA FLOTANTE -->
+      <div id="lyricsOverlay">
+        <div id="lyrics"></div>
+      </div>
+    </div>
+  </div>
+
+<div id="scoreboard">
+  <h3>🏆 Ranking</h3>
+
+  <ol id="rankingList"></ol>
+
+  <div id="hostControls">
+    <button id="repeatBtn">⏪</button>
+    <button id="closeBtn">⛔</button>
+    <button id="playersBtn">👥</button>
+    <button id="newGameBtn">🆕</button>
+    <button id="finishGameBtn">💰</button>
+  </div>
+
+  <div id="optionsPreview">
+    <h4>Opciones</h4>
+    <ul id="optionsList"></ul>
+  </div>
+</div>
+
+<div id="playersModal" class="modal hidden">
+  <div class="modal-content">
+    <h3>👥 Jugadores conectados</h3>
+    <ul id="playersList"></ul>
+    <button id="closePlayersBtn">Cerrar</button>
+  </div>
+</div>
+
+<div id="hostAuthOverlay" class="modal">
+  <div class="modal-content">
+    <h3>🔐 Acceso Host</h3>
+    <input
+      id="hostPinInput"
+      type="password"
+      placeholder="PIN del host"
+      style="width:90%; padding:8px; font-size:1em"
+    />
+    <p id="hostAuthError" style="color:#ff5252; display:none">
+      PIN incorrecto
+    </p>
+    <button id="hostAuthBtn">Entrar</button>
+  </div>
+</div>
+
+
+
+<script type="module">
+/* ============================
+   1️⃣ CONSTANTES + AUTH
+   ============================ */
+import { getSpeedBonus } from "../shared/utils.js";
+
+  const HOST_PIN = "7391";
+
+/* ============================
+   2️⃣ GATEKEEPER
+   ============================ */
+
+const authOverlay = document.getElementById("hostAuthOverlay");
+const authBtn = document.getElementById("hostAuthBtn");
+const authInput = document.getElementById("hostPinInput");
+const authError = document.getElementById("hostAuthError");
+
+// ¿ya autenticado?
+const isAuthed = sessionStorage.getItem("HOST_AUTH") === "ok";
+
+if (!isAuthed) {
+  authOverlay.classList.remove("hidden");
+
+  authInput.focus(); // 🎯 foco inmediato
+
+  // ⏎ permitir Enter para confirmar
+  authInput.addEventListener("keydown", e => {
+    if (e.key === "Enter") authBtn.click();
+  });
+
+  authBtn.onclick = () => {
+    if (authInput.value === HOST_PIN) {
+      sessionStorage.setItem("HOST_AUTH", "ok");
+      authOverlay.classList.add("hidden");
+      startHostApp(); // 🚀 arranca el host
+    } else {
+      authError.style.display = "block";
+      authInput.focus(); // volver a enfocar tras error
+    }
+  };
+
+} else {
+  authOverlay.classList.add("hidden");
+  startHostApp();
+}
+
+
+
+/* ============================
+   3️⃣ APP REAL (TODO LO DEMÁS)
+   ============================ */
+
+function startHostApp() {
+
+const HOST_SIGNATURE = Math.random().toString(36).slice(2);
+const IS_PRIMARY_HOST = true;
+const gameTotals = {}; // userId -> puntos acumulados del juego
+let finishingGame = false;
+
+const hostButtons = [
+  "repeatBtn",
+  "closeBtn",
+  "playersBtn",
+  "newGameBtn",
+  "finishGameBtn"
+].map(id => document.getElementById(id));
+
+
+if (startHostApp.started) return;
+startHostApp.started = true;
+
+// ===== HEARTBEAT / USER_ALIVE =====
+const lastSeen = new Map();          // userId -> timestamp
+const ALIVE_TTL_MS = 15000;          // 15s sin vida = afuera
+const PRUNE_EVERY_MS = 3000;         // cada 3s revisa
+
+const gameState = {
+  questionOpen: false,
+  openedAt: null,
+  expectedPlayers: new Set(),
+  answers: {},
+  openedQuestions: new Set()
+};
+
+// ================================
+// 🔐 Seguridad de canal (HOST)
+// ================================
+
+const HOST_ALLOWED = new Set([
+  "PLAYER_JOIN",
+  "PLAYER_REJOIN",
+  "PLAYER_ALIVE",
+  "ANSWER",
+  "HOST_CLAIM"
+]);
+
+
+
+let player;
+let lyrics, exercise, rules;
+let pendingYoutubeId = null;
+let previousLineId = null;
+let currentLineId = null;
+let currentQuestionWordId = null;
+let connectedPlayers = new Set();
+let answeredPlayers = new Set();
+let freezeVideoLogic = false;
+let playerNicknames = {};
+let isRepeating = false;
+let repeatEndTime = null;
+let pendingFadeInterval = null;
+let currentQuestionState = null;
+
+function generateRoomCode() {
+  return Math.random()
+    .toString(36)
+    .substring(2, 6)
+    .toUpperCase();
+}
+
+let ROOM_CODE = sessionStorage.getItem("ROOM_CODE");
+
+if (!ROOM_CODE) {
+  ROOM_CODE = generateRoomCode();
+  sessionStorage.setItem("ROOM_CODE", ROOM_CODE);
+}
+
+let channel = null;
+
+
+
+document.getElementById("roomCode").textContent =
+  `Código: ${ROOM_CODE}`;
+
+
+
+
+
+// Bloque de RESTAURACIÓN
+
+const saved = sessionStorage.getItem("questionState");
+
+if (saved) {
+  try {
+    const data = JSON.parse(saved);
+
+    currentQuestionState = data.currentQuestionState;
+    currentQuestionWordId = data.currentQuestionState?.wordId ?? null;
+
+    Object.keys(gameState.answers).forEach(k => delete gameState.answers[k]);
+Object.assign(gameState.answers, data.answers || {});
+
+gameState.expectedPlayers.clear();
+(data.expectedPlayers || []).forEach(p => gameState.expectedPlayers.add(p));
+
+// 🔁 REHIDRATACIÓN DE CONECTADOS (host refresh)
+// Nota: tras refresh, los players aún no han enviado PLAYER_ALIVE
+// pero el host debe considerarlos presentes para el conteo
+gameState.expectedPlayers.forEach(p => {
+  connectedPlayers.add(p);
+});
+
+
+gameState.openedQuestions.clear();
+(data.openedQuestions || []).forEach(q => gameState.openedQuestions.add(q));
+
+    gameState.openedAt = data.openedAt;
+    gameState.questionOpen = true;
+
+answeredPlayers.clear();
+(data.answeredPlayers || []).forEach(p => answeredPlayers.add(p));
+
+    updateStatus();
+  } catch {
+    sessionStorage.removeItem("questionState");
+  }
+}
+
+
+if (currentQuestionState) {
+  freezeVideoLogic = true;
+  if (lyrics) {renderOptionsPreview(currentQuestionState.options);}
+}
+
+
+const playersModal = document.getElementById("playersModal");
+const playersList = document.getElementById("playersList");
+
+bindChannel(ROOM_CODE);
+setTimeout(updateStatus, 500);
+
+const WS_URL = "ws://localhost:3000"; 
+// luego será wss://tuservicio.onrender.com
+
+function bindChannel(newRoomCode) {
+  try { channel?.close(); } catch (_) {}
+
+  channel = new WebSocket(WS_URL);
+
+  channel.onopen = () => {
+    // 🔑 handshake: aquí dices qué sala eres y que eres HOST
+    channel.send(JSON.stringify({
+      type: "HELLO",
+      role: "HOST",
+      roomCode: newRoomCode
+    }));
+
+    // opcional: reclamar sala (equivalente a HOST_CLAIM)
+    channel.send(JSON.stringify({
+      type: "HOST_BROADCAST",
+      payload: { type: "HOST_CLAIM" }
+    }));
+  };
+
+  channel.onmessage = (ev) => {
+    let msg;
+    try { msg = JSON.parse(ev.data); } catch { return; }
+    handleHostMessages({ data: msg });
+  };
+}
+
+
+
+function updateStatus() {
+  const total = gameState.questionOpen
+    ? gameState.expectedPlayers.size
+    : connectedPlayers.size;
+
+  if (total === 0) {
+    document.getElementById("status").textContent =
+      "Esperando jugadores…";
+    return;
+  }
+
+  document.getElementById("status").textContent =
+    `Respondieron ${answeredPlayers.size} / ${total}`;
+}
+
+
+function handleHostMessages(e) {
+  const msg = e.data;
+
+  if (!HOST_ALLOWED.has(msg.type)) return;
+
+  // 🔐 seguridad: solo aceptar mensajes firmados (si traen firma)
+  if (msg.sig && msg.sig !== HOST_SIGNATURE) return;
+
+if (sessionStorage.getItem("HOST_AUTH") !== "ok") return;
+
+  // ===============================
+  // PLAYER JOIN / REJOIN / ALIVE
+  // ===============================
+if (
+  msg.type === "PLAYER_JOIN" ||
+  msg.type === "PLAYER_REJOIN" ||
+  msg.type === "PLAYER_ALIVE"
+) {
+  const userId = msg.user;
+
+  touchAlive(userId);
+  connectedPlayers.add(userId);
+
+  if (msg.nickname || msg.emoji) {
+    playerNicknames[userId] = {
+      nickname: msg.nickname || playerNicknames[userId]?.nickname || "Jugador",
+      emoji: msg.emoji || playerNicknames[userId]?.emoji || "🙂"
+    };
+  }
+
+  updateStatus();
+
+if (isQuestionActive() && !answeredPlayers.has(userId)) {
+  channel.send(JSON.stringify({
+    type: "HOST_BROADCAST",
+    payload: {
+      type: "OPEN",
+      wordId: currentQuestionState.wordId,
+      openedAt: currentQuestionState.openedAt,
+      options: currentQuestionState.options,
+      sig: HOST_SIGNATURE
+    }
+  }));
+}
+
+  if (!playersModal.classList.contains("hidden")) {
+    renderPlayersList();
+  }
+
+  return;
+}
+
+
+  // ===============================
+  // ANSWER
+  // ===============================
+if (msg.type === "ANSWER") {
+ if (
+  gameState.questionOpen &&
+  gameState.expectedPlayers.has(msg.user) &&
+  !gameState.answers[msg.user]
+) {
+
+   gameState.answers[msg.user] = msg;
+   answeredPlayers.add(msg.user);
+  persistQuestionState();
+   updateStatus();
+ }
+
+
+  if (
+    isQuestionActive() &&
+    answeredPlayers.size >= gameState.expectedPlayers.size &&
+    gameState.expectedPlayers.size > 0
+  ) {
+    closeQuestion();
+  }
+
+  return;
+}
+
+}
+
+function renderPlayersList() {
+  playersList.innerHTML = "";
+
+  if (connectedPlayers.size === 0) {
+    const li = document.createElement("li");
+    li.textContent = "— No hay jugadores —";
+    playersList.appendChild(li);
+    return;
+  }
+
+  connectedPlayers.forEach(userId => {
+    const data = playerNicknames[userId];
+    const li = document.createElement("li");
+
+    if (data) {
+      li.textContent = `${data.emoji} ${data.nickname} (${userId})`;
+    } else {
+      li.textContent = `🙂 ${userId}`;
+    }
+
+    playersList.appendChild(li);
+  });
+}
+
+document.getElementById("playersBtn").addEventListener("click", () => {
+  renderPlayersList();
+  playersModal.classList.remove("hidden");
+});
+
+document
+  .getElementById("closePlayersBtn")
+  .addEventListener("click", () => {
+    playersModal.classList.add("hidden");
+  });
+
+// cerrar al hacer click fuera
+playersModal.addEventListener("click", e => {
+  if (e.target === playersModal) {
+    playersModal.classList.add("hidden");
+  }
+});
+
+
+function repeatCurrentLine() {
+  if (pendingFadeInterval) {
+    clearInterval(pendingFadeInterval);
+    pendingFadeInterval = null;
+  }
+  if (!currentLineId || !player || !lyrics) return;
+
+  const line = lyrics.lines.find(l => l.id === currentLineId);
+  if (!line) return;
+
+  const firstWordId = line.wordIds[0];
+  const firstWord = lyrics.words.find(w => w.id === firstWordId);
+  if (!firstWord || firstWord.time == null) return;
+
+  const seekTime = Math.max(0, firstWord.time - 2);
+
+// 🔒 modo repetición
+isRepeating = true;
+freezeVideoLogic = true;
+
+// calcular fin REAL del verso (inicio del siguiente)
+const lineIndex = lyrics.lines.findIndex(l => l.id === line.id);
+const nextLine = lyrics.lines[lineIndex + 1];
+
+if (nextLine) {
+  const nextFirstWordId = nextLine.wordIds[0];
+  const nextFirstWord = lyrics.words.find(w => w.id === nextFirstWordId);
+  repeatEndTime = nextFirstWord.time;
+} else {
+  repeatEndTime = player.getDuration();
+}
+
+player.seekTo(seekTime);
+player.playVideo();
+
+
+  document.getElementById("status").textContent =
+    "Repitiendo verso…";
+}
+
+
+document
+  .getElementById("repeatBtn")
+  .addEventListener("click", repeatCurrentLine);
+
+// ================================
+// YouTube Player
+// ================================
+function initPlayer(videoId) {
+  player = new YT.Player("player", {
+    height: "315",
+    width: "560",
+    videoId,
+    playerVars: { controls: 1 },
+    events: {
+      onReady: () => setInterval(checkVideoTime, 200)
+    }
+  });
+}
+
+window.onYouTubeIframeAPIReady = () => {
+  if (pendingYoutubeId) {
+    initPlayer(pendingYoutubeId);
+  }
+};
+
+// ================================
+// Cargar datos
+// ================================
+Promise.all([
+  fetch("../data/lyrics-base.json").then(r => r.json()),
+  fetch("../data/exercise.json").then(r => r.json()),
+  fetch("../data/rules.json").then(r => r.json())
+]).then(([l, e, r]) => {
+  lyrics = l;
+  exercise = e;
+  rules = r;
+
+  pendingYoutubeId = lyrics.song.youtubeId;
+
+  // 👇 solo inicializa si YT ya existe
+  if (window.YT && window.YT.Player) {
+    initPlayer(pendingYoutubeId);
+  }
+});
+
+// ================================
+// Render letra por versos
+// ================================
+function renderVisibleLines() {
+  const container = document.getElementById("lyrics");
+  container.innerHTML = "";
+
+  const linesToShow = [];
+
+  if (previousLineId) {
+    linesToShow.push(previousLineId);
+  }
+  if (currentLineId) {
+    linesToShow.push(currentLineId);
+  }
+
+  linesToShow.forEach(lineId => {
+    const line = lyrics.lines.find(l => l.id === lineId);
+    if (!line) return;
+
+    const div = document.createElement("div");
+    div.className = "line";
+    if (lineId === currentLineId) {
+      div.classList.add("active");
+    }
+
+    line.wordIds.forEach(wordId => {
+      const w = lyrics.words.find(x => x.id === wordId);
+      if (!w) return;
+
+      const isQuestionWord =
+        exercise.exercise.questionWordIds.includes(w.id);
+
+      const span = document.createElement("span");
+span.className = "word";
+span.dataset.wordId = w.id;
+
+if (isQuestionWord) {
+  span.textContent = " [ … ] ";
+} else {
+  span.textContent = w.text;
+}
+
+div.appendChild(span);
+div.append(" ");
+
+    });
+
+    container.appendChild(div);
+  });
+}
+
+// ================================
+// Detección de verso actual
+// ================================
+function checkVideoTime() {
+  if (!player || !lyrics) return;
+
+ if (isRepeating) {
+  const t = player.getCurrentTime();
+
+  highlightCurrentWord(t);
+
+  if (repeatEndTime !== null && t >= repeatEndTime) {
+    player.pauseVideo();        // ⛔ AQUÍ estaba el bug
+    isRepeating = false;
+    freezeVideoLogic = false;
+    repeatEndTime = null;
+  }
+
+  return;
+}
+
+
+  if (freezeVideoLogic) return;
+
+  const t = player.getCurrentTime();
+
+  if (isQuestionActive()) {
+    highlightCurrentWord(t);
+    return;
+  }
+
+  const line = getCurrentLineByTime(t);
+  if (!line || line.id === currentLineId) {
+    highlightCurrentWord(t);
+    return;
+  }
+
+  previousLineId = currentLineId;
+  currentLineId = line.id;
+  renderVisibleLines();
+
+  const questionWordId = line.wordIds.find(id =>
+    exercise.exercise.questionWordIds.includes(id)
+  );
+
+  if (questionWordId && !gameState.openedQuestions.has(questionWordId)) {
+    gameState.openedQuestions.add(questionWordId);
+    openQuestionAutomatically(questionWordId);
+  }
+
+  highlightCurrentWord(t);
+}
+
+
+// ================================
+// Determinar verso por tiempo
+// ================================
+function getCurrentLineByTime(time) {
+  for (let i = 0; i < lyrics.lines.length; i++) {
+    const line = lyrics.lines[i];
+    const firstWord = lyrics.words.find(w => w.id === line.wordIds[0]);
+    const nextLine = lyrics.lines[i + 1];
+
+    const start = firstWord.time;
+    const end = nextLine
+      ? lyrics.words.find(w => w.id === nextLine.wordIds[0]).time
+      : Infinity;
+
+    if (time >= start && time < end) return line;
+  }
+  return null;
+}
+
+// ================================
+// UI helpers
+// ================================
+
+function touchAlive(userId) {
+  lastSeen.set(userId, Date.now());
+}
+
+function removePlayer(userId) {
+  connectedPlayers.delete(userId);
+  lastSeen.delete(userId);
+
+  if (gameState.expectedPlayers.has(userId)) {
+    gameState.expectedPlayers.delete(userId);
+    delete gameState.answers[userId];
+    answeredPlayers.delete(userId);
+  }
+}
+
+
+function pruneDeadPlayers() {
+  const now = Date.now();
+  let removedAny = false;
+
+  for (const userId of [...connectedPlayers]) {
+    const ts = lastSeen.get(userId);
+    if (!ts) continue;
+
+    if (now - ts > ALIVE_TTL_MS) {
+      removePlayer(userId);
+      removedAny = true;
+    }
+  }
+
+  if (removedAny) {
+    updateStatus();
+
+    // refrescar modal si está abierto
+    if (!playersModal.classList.contains("hidden")) renderPlayersList();
+
+    // si hay pregunta abierta y ya “no falta nadie”
+    if (isQuestionActive() && gameState.expectedPlayers.size > 0 && answeredPlayers.size >= gameState.expectedPlayers.size) {
+      closeQuestion();
+    }
+  }
+}
+
+// arranca el loop de limpieza
+setInterval(pruneDeadPlayers, PRUNE_EVERY_MS);
+
+function persistQuestionState() {
+  if (!gameState.questionOpen || !currentQuestionState) return;
+
+  sessionStorage.setItem("questionState", JSON.stringify({
+    currentQuestionState,
+    answers: { ...gameState.answers },
+    answeredPlayers: [...answeredPlayers],
+    expectedPlayers: [...gameState.expectedPlayers],
+    openedQuestions: [...gameState.openedQuestions],
+    openedAt: gameState.openedAt
+  }));
+}
+
+
+function generateOptions(correctWordId, count = 4) {
+  const correctWord = lyrics.words.find(w => w.id === correctWordId);
+  if (!correctWord) return [];
+
+  // pool de palabras ÚNICAS (texto)
+  const uniquePool = [
+    ...new Set(
+      lyrics.words
+        .filter(w => w.id !== correctWordId)
+        .map(w => w.text)
+    )
+  ];
+
+  const distractors = [];
+
+  while (distractors.length < count - 1 && uniquePool.length > 0) {
+    const idx = Math.floor(Math.random() * uniquePool.length);
+    distractors.push(uniquePool.splice(idx, 1)[0]);
+  }
+
+  const options = [correctWord.text, ...distractors];
+
+  // shuffle
+  for (let i = options.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [options[i], options[j]] = [options[j], options[i]];
+  }
+
+  return options;
+}
+
+function normalizeWord(str) {
+  return str
+    .toLowerCase()
+    .normalize("NFD")                 // separa acentos
+    .replace(/[\u0300-\u036f]/g, "")  // elimina acentos
+    .trim();
+}
+
+
+
+function highlightCurrentWord(currentTime) {
+  if (!currentLineId) return;
+
+  const line = lyrics.lines.find(l => l.id === currentLineId);
+  if (!line) return;
+
+  let activeWordId = null;
+
+  for (let i = 0; i < line.wordIds.length; i++) {
+    const w = lyrics.words.find(
+      x => x.id === line.wordIds[i]
+    );
+    if (!w || w.time == null) continue;
+
+    const nextWord = lyrics.words.find(
+      x => x.id === line.wordIds[i + 1]
+    );
+
+    const start = w.time;
+    const end = nextWord ? nextWord.time : start + 1;
+
+    if (currentTime >= start && currentTime < end) {
+      activeWordId = w.id;
+      break;
+    }
+  }
+
+  document.querySelectorAll(".word").forEach(span => {
+const isActive = Number(span.dataset.wordId) === activeWordId;
+
+if (isActive) {
+  if (!span.classList.contains("active")) {
+    span.classList.add("active");
+  }
+} else {
+  span.classList.remove("active");
+}
+
+  });
+}
+
+function fadeOutAndPause(duration = 3000) {
+  const steps = 15;
+  const interval = duration / steps;
+  let currentStep = 0;
+
+  const startVolume = player.getVolume();
+
+  const fade = setInterval(() => {
+    currentStep++;
+    const newVolume = Math.max(
+      0,
+      startVolume * (1 - currentStep / steps)
+    );
+    player.setVolume(newVolume);
+
+    if (currentStep >= steps) {
+      clearInterval(fade);
+      player.pauseVideo();
+      player.setVolume(startVolume); // 🔁 listo para continuar luego
+    }
+  }, interval);
+}
+
+function updateRanking() {
+  const list = document.getElementById("rankingList");
+  list.innerHTML = "";
+
+  const entries = Object.entries(gameTotals)
+    .map(([user, score]) => ({ user, score }))
+    .sort((a, b) => b.score - a.score);
+
+  if (entries.length === 0) return;
+
+  const limit = connectedPlayers.size < 10 ? 3 : 5;
+
+  entries.slice(0, limit).forEach(e => {
+    const li = document.createElement("li");
+
+    const player = playerNicknames[e.user];
+    const label = player
+      ? `${player.emoji} ${player.nickname}`
+      : `🙂 Jugador ${e.user}`;
+
+    li.textContent = `${label} — ${e.score} pts`;
+    list.appendChild(li);
+  });
+}
+
+
+
+function renderOptionsPreview(options) {
+  const ul = document.getElementById("optionsList");
+  ul.innerHTML = "";
+
+  options.forEach(opt => {
+    const li = document.createElement("li");
+    li.textContent = opt;
+    ul.appendChild(li);
+  });
+}
+
+// ================================
+// Abrir pregunta automáticamente
+// ================================
+function openQuestionAutomatically(wordId) {
+  if (isQuestionActive()) return;
+ 
+  currentQuestionWordId = wordId;
+  
+  gameState.expectedPlayers.clear();
+  connectedPlayers.forEach(p => gameState.expectedPlayers.add(p));
+
+  Object.keys(gameState.answers).forEach(k => delete gameState.answers[k]);
+  answeredPlayers.clear();
+  gameState.questionOpen = true;
+  gameState.openedAt = Date.now();
+
+  const openedAt = gameState.openedAt;
+
+  const options = generateOptions(wordId);
+  renderOptionsPreview(options);
+
+  currentQuestionState = {
+    wordId,
+    openedAt: gameState.openedAt,
+    options
+  };
+
+  persistQuestionState();
+
+  // cancelar cualquier fade pendiente
+  if (pendingFadeInterval) {
+    clearInterval(pendingFadeInterval);
+    pendingFadeInterval = null;
+  }
+
+  // calcular verso y momento de fade
+  const line = lyrics.lines.find(l => l.wordIds.includes(wordId));
+  if (!line) {
+    // fallback seguro
+    freezeVideoLogic = true;
+    fadeOutAndPause(1200);
+    setTimeout(() => {
+      player.pauseVideo();
+
+channel.send(JSON.stringify({
+  type: "HOST_BROADCAST",
+  payload: {
+    type: "OPEN",
+    wordId,
+    openedAt,
+    options,
+    sig: HOST_SIGNATURE
+  }
+}));
+
+    }, 1300);
+    return;
+  }
+
+// calcular inicio del siguiente verso (fin real del verso actual)
+const lineIndex = lyrics.lines.findIndex(l => l.id === line.id);
+const nextLine = lyrics.lines[lineIndex + 1];
+
+let fadeStartTime;
+
+if (nextLine) {
+  const nextFirstWordId = nextLine.wordIds[0];
+  const nextFirstWord = lyrics.words.find(w => w.id === nextFirstWordId);
+  fadeStartTime = nextFirstWord.time - 1.2; // 1.2s antes del siguiente verso
+} else {
+  // último verso de la canción
+  fadeStartTime = player.getDuration() - 1.2;
+}
+
+
+  // esperar al final del verso
+  pendingFadeInterval = setInterval(() => {
+    const t = player.getCurrentTime();
+
+    // si la pregunta ya no es válida, abortamos
+    if (!gameState.questionOpen || currentQuestionWordId !== wordId) {
+      clearInterval(pendingFadeInterval);
+      pendingFadeInterval = null;
+      return;
+    }
+
+    if (t >= fadeStartTime) {
+      clearInterval(pendingFadeInterval);
+      pendingFadeInterval = null;
+
+      freezeVideoLogic = true;
+      fadeOutAndPause(1200);
+
+      setTimeout(() => {
+        player.pauseVideo();channel.send(JSON.stringify({
+  type: "HOST_BROADCAST",
+  payload: {
+    type: "OPEN",
+    wordId,
+    openedAt,
+    options,
+    sig: HOST_SIGNATURE
+  }
+}));
+
+      }, 1300);
+    }
+  }, 100);
+}
+
+// ================================
+// Cierre manual con tecla (opcional)
+// ================================
+document.addEventListener("keydown", e => {
+  if (e.key === "c") closeQuestion();
+});
+
+document
+  .getElementById("closeBtn")
+  .addEventListener("click", closeQuestion);
+
+
+function closeQuestion() {
+  if (!gameState.questionOpen) return;
+
+  gameState.questionOpen = false;
+  freezeVideoLogic = false;
+
+  const questionOpenedAt = gameState.openedAt;
+
+console.log("ANSWERS", gameState.answers);
+console.log("EXPECTED", [...gameState.expectedPlayers]);
+
+
+  // 🔢 calcular scores de ESTA pregunta
+const { wordId, openedAt } = currentQuestionState;
+
+const correctWord = lyrics.words.find(w => w.id === wordId)?.text || "";
+const normalizedCorrect = normalizeWord(correctWord);
+
+const scores = Object.fromEntries(
+  Object.entries(gameState.answers).map(([user, data]) => {
+    const normalizedAnswer = normalizeWord(data.answer || "");
+    const isCorrect = normalizedAnswer === normalizedCorrect;
+
+    const delta = Math.max(0, data.timestamp - openedAt);
+    const bonus = isCorrect ? getSpeedBonus(delta) : 0;
+
+    return [user, bonus];
+  })
+);
+
+
+
+  // 🧮 ACUMULAR puntos del juego (NUEVO)
+  Object.entries(scores).forEach(([user, pts]) => {
+    gameTotals[user] = (gameTotals[user] || 0) + pts;
+  });
+
+  // 📤 enviar resultados a los players
+channel.send(JSON.stringify({
+  type: "HOST_BROADCAST",
+  payload: {
+    type: "QUESTION_RESULT",
+    sig: HOST_SIGNATURE,
+    scores
+  }
+}));
+
+
+channel.send(JSON.stringify({
+  type: "HOST_BROADCAST",
+  payload: { type: "CLOSE", sig: HOST_SIGNATURE }
+}));
+
+  updateRanking();
+  player.playVideo();
+
+  currentQuestionState = null;
+  currentQuestionWordId = null;
+  sessionStorage.removeItem("questionState");
+}
+
+
+
+document
+  .getElementById("newGameBtn")
+  .addEventListener("click", resetGameSession);
+
+document
+  .getElementById("finishGameBtn")
+  .addEventListener("click", finishGame);
+
+
+function setHostControlsEnabled(enabled) {
+  hostButtons.forEach(btn => {
+    if (!btn) return;
+    btn.disabled = !enabled;
+    btn.style.opacity = enabled ? "1" : "0.4";
+    btn.style.pointerEvents = enabled ? "auto" : "none";
+  });
+}
+
+function resetGameSession() {
+
+if (!confirm("¿Crear una nueva sala y expulsar a todos?")) return;
+
+  setHostControlsEnabled(false);
+
+gameState.questionOpen = false;
+gameState.openedAt = null;
+gameState.expectedPlayers.clear();
+gameState.openedQuestions.clear();
+Object.keys(gameState.answers).forEach(k => delete gameState.answers[k]);
+
+  // 1. Avisar a los players que la sala muere
+  channel.send(JSON.stringify({
+  type: "HOST_BROADCAST",
+  payload: { type: "GAME_RESET", sig: HOST_SIGNATURE }
+}));
+
+  // 2. Nuevo código
+  ROOM_CODE = generateRoomCode();
+  sessionStorage.setItem("ROOM_CODE", ROOM_CODE);
+
+  // 3. Nuevo canal
+  bindChannel(ROOM_CODE);
+
+  // 4. Reset estado interno
+  connectedPlayers.clear();
+  answeredPlayers.clear();
+  currentQuestionWordId = null;
+
+  // 5. UI
+  document.getElementById("roomCode").textContent =
+    `Código: ${ROOM_CODE}`;
+  document.getElementById("status").textContent =
+    "Nueva sala creada";
+  setHostControlsEnabled(true);
+
+}
+
+function isQuestionActive() {
+  return gameState.questionOpen && currentQuestionState;
+}
+
+// Pago de puntos
+
+const MAX_MXP = 6;
+const QUESTIONS_PER_GAME = 14;
+const MAX_PTS_PER_QUESTION = 1500;
+
+const FACTOR =
+  MAX_MXP / (QUESTIONS_PER_GAME * MAX_PTS_PER_QUESTION);
+
+function computeMXP() {
+  return Object.entries(gameTotals).map(([id, points]) => ({
+    id,
+    delta: Math.min(
+      MAX_MXP,
+      Math.round(points * FACTOR * 100) / 100
+    )
+  }));
+}
+
+
+
+async function payMXP() {
+  const rawChanges = computeMXP();
+  const changes = normalizeChanges(rawChanges);
+
+  if (changes.length === 0) return;
+await fetch("/api/pay-mxp", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ changes })
+});
+}
+
+
+
+async function finishGame() {
+  if (finishingGame) return;
+  finishingGame = true;
+
+  if (!confirm("¿Finalizar juego y pagar MXP?")) {
+    finishingGame = false;
+    return;
+  }
+
+  setHostControlsEnabled(false);
+
+  try {
+    await payMXP();
+  } catch (e) {
+   finishingGame = false;
+   setHostControlsEnabled(true); // 🔓 rollback
+   alert("Falló el pago MXP. No cierro la sala.");
+   return;
+}
+
+
+  // 🔥 matar sala
+channel.send(JSON.stringify({
+  type: "HOST_BROADCAST",
+  payload: { type: "GAME_RESET", sig: HOST_SIGNATURE }
+}));
+
+  // 🔁 nuevo pin
+  ROOM_CODE = generateRoomCode();
+  sessionStorage.setItem("ROOM_CODE", ROOM_CODE);
+
+  bindChannel(ROOM_CODE);
+
+  // limpiar estado
+  connectedPlayers.clear();
+  answeredPlayers.clear();
+  Object.keys(gameState.answers).forEach(k => delete gameState.answers[k]);
+  gameState.expectedPlayers.clear();
+  gameState.openedQuestions.clear();
+  Object.keys(gameTotals).forEach(k => delete gameTotals[k]); // 🧹 reset acumulador
+
+  document.getElementById("roomCode").textContent =
+    `Código: ${ROOM_CODE}`;
+
+  document.getElementById("status").textContent =
+    "💰 MXP pagados. Nueva sala lista.";
+
+  setHostControlsEnabled(true);
+}
+
+function normalizeChanges(changes) {
+  const acc = {};
+
+  for (const { id, delta } of changes) {
+    if (!acc[id]) acc[id] = 0;
+    acc[id] += delta;
+  }
+
+  return Object.entries(acc).map(([id, delta]) => ({
+    id,
+    delta
+  }));
+}
+
+
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Editor Paso 2 – Ejercicio</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    span.word {
+      cursor: pointer;
+      padding: 2px 4px;
+      margin: 2px;
+      display: inline-block;
+    }
+    span.selected {
+      background: #ffe066;
+    }
+
+  .line {
+    margin-bottom: 10px;
+  }
+  .word {
+    cursor: pointer;
+    padding: 2px 4px;
+    margin: 2px;
+    display: inline-block;
+  }
+  .selected {
+    background: #ffe066;
+  }
+
+  </style>
+</head>
+<body>
+
+<h2>Paso 2 – Crear ejercicio</h2>
+
+<input id="exerciseName" placeholder="Nombre del ejercicio" />
+<br><br>
+<textarea id="exerciseDesc" placeholder="Descripción"></textarea>
+
+<h3>Letra</h3>
+<div id="lyrics"></div>
+
+<br>
+<button onclick="exportExercise()">Exportar ejercicio</button>
+
+<script>
+let lyricsBase;
+let questionWordIds = new Set();
+
+fetch("../data/lyrics-base.json")
+  .then(r => r.json())
+  .then(data => {
+    lyricsBase = data;
+    renderLyrics();
+  });
+
+function renderLyrics() {
+  const container = document.getElementById("lyrics");
+  container.innerHTML = "";
+
+  lyricsBase.lines.forEach(line => {
+    const lineDiv = document.createElement("div");
+    lineDiv.className = "line";
+
+    line.wordIds.forEach(wordId => {
+      const word = lyricsBase.words.find(w => w.id === wordId);
+      if (!word) return;
+
+      const span = document.createElement("span");
+      span.textContent = word.text;
+      span.className = "word";
+
+      span.onclick = () => toggle(word.id, span);
+
+      lineDiv.appendChild(span);
+      lineDiv.append(" ");
+    });
+
+    container.appendChild(lineDiv);
+  });
+}
+
+function toggle(id, span) {
+  if (questionWordIds.has(id)) {
+    questionWordIds.delete(id);
+    span.classList.remove("selected");
+  } else {
+    questionWordIds.add(id);
+    span.classList.add("selected");
+  }
+}
+
+function exportExercise() {
+  const json = {
+    version: "1.0",
+    type: "exercise",
+    exercise: {
+      id: "exercise-01",
+      songId: lyricsBase.song.id,
+      name: document.getElementById("exerciseName").value,
+      description: document.getElementById("exerciseDesc").value,
+      questionWordIds: Array.from(questionWordIds)
+    }
+  };
+
+  console.log(JSON.stringify(json, null, 2));
+  alert("Ejercicio generado. Revisa la consola.");
+}
+</script>
+
+</body>
+</html>

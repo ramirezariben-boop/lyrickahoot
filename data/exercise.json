@@ -1,0 +1,25 @@
+{
+  "version": "1.0",
+  "type": "exercise",
+  "exercise": {
+    "id": "exercise-01",
+    "songId": "rammstein-du-hast",
+    "name": "DuHast_Prueba2",
+    "description": "",
+    "questionWordIds": [
+      37,
+      49,
+      55,
+      63,
+      71,
+      74,
+      118,
+      119,
+      130,
+      136,
+      142,
+      145,
+      158
+    ]
+  }
+}

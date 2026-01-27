@@ -1,0 +1,134 @@
+import http from "http";
+import { WebSocketServer } from "ws";
+
+const PORT = process.env.PORT || 3000;
+
+// roomCode -> { host: ws|null, players: Map(studentId, ws), sig: string|null }
+const rooms = new Map();
+
+function getRoom(code) {
+  if (!rooms.has(code)) {
+    rooms.set(code, { host: null, players: new Map(), sig: null });
+  }
+  return rooms.get(code);
+}
+
+function safeSend(ws, obj) {
+  if (ws && ws.readyState === ws.OPEN) ws.send(JSON.stringify(obj));
+}
+
+function broadcastToPlayers(room, msg) {
+  for (const ws of room.players.values()) safeSend(ws, msg);
+}
+
+const server = http.createServer((req, res) => {
+  // healthcheck simple
+  if (req.url === "/health") {
+    res.writeHead(200, { "content-type": "text/plain" });
+    return res.end("ok");
+  }
+  res.writeHead(404);
+  res.end();
+});
+
+const wss = new WebSocketServer({ server });
+
+wss.on("connection", (ws) => {
+  ws.meta = { role: null, roomCode: null, userId: null };
+
+  ws.on("message", (raw) => {
+    let msg;
+    try { msg = JSON.parse(raw.toString()); } catch { return; }
+
+    // Handshake mínimo
+    if (msg.type === "HELLO") {
+      const { role, roomCode, userId } = msg;
+      if (!role || !roomCode) return;
+
+      ws.meta.role = role;
+      ws.meta.roomCode = roomCode;
+      ws.meta.userId = userId || null;
+
+      const room = getRoom(roomCode);
+
+      if (role === "HOST") {
+        // 1 host por sala (si llega otro, reemplaza)
+        room.host = ws;
+        safeSend(ws, { type: "HOST_OK" });
+        // opcional: notificar a players
+        broadcastToPlayers(room, { type: "HOST_ONLINE" });
+        return;
+      }
+
+      if (role === "PLAYER") {
+        if (!userId) return;
+        room.players.set(userId, ws);
+        safeSend(ws, { type: "PLAYER_OK" });
+        // avisar host
+        safeSend(room.host, { type: "PLAYER_JOIN", user: userId, nickname: msg.nickname, emoji: msg.emoji });
+        return;
+      }
+    }
+
+    // Verificación de sala (lo que hoy hacías con ROOM_CHECK/ROOM_OK)
+    if (msg.type === "ROOM_CHECK") {
+      const room = rooms.get(msg.roomCode);
+      const ok = !!room?.host; // sala existe si el host ya está conectado
+      safeSend(ws, { type: ok ? "ROOM_OK" : "ROOM_NO" });
+      return;
+    }
+
+  // Respuestas directas del PLAYER hacia el HOST
+  if (msg.type === "ANSWER") {
+    const room = rooms.get(ws.meta.roomCode);
+    if (!room) return;
+    safeSend(room.host, msg);
+    return;
+  }
+
+    // Enrutamiento de mensajes del HOST hacia PLAYERS
+    if (msg.type === "HOST_BROADCAST") {
+      const room = rooms.get(ws.meta.roomCode);
+      if (!room || room.host !== ws) return;
+
+      // guardamos una firma/sig por sala (similar a tu trustedSignature)
+      if (msg.payload?.sig && !room.sig) room.sig = msg.payload.sig;
+
+      broadcastToPlayers(room, msg.payload);
+      return;
+    }
+
+    // Respuestas del PLAYER hacia el HOST
+    if (msg.type === "PLAYER_TO_HOST") {
+      const room = rooms.get(ws.meta.roomCode);
+      if (!room) return;
+      safeSend(room.host, msg.payload);
+      return;
+    }
+  });
+
+  ws.on("close", () => {
+    const { role, roomCode, userId } = ws.meta || {};
+    if (!roomCode) return;
+
+    const room = rooms.get(roomCode);
+    if (!room) return;
+
+    if (role === "HOST" && room.host === ws) {
+      room.host = null;
+      broadcastToPlayers(room, { type: "GAME_RESET" }); // o HOST_OFFLINE
+    }
+
+    if (role === "PLAYER" && userId) {
+      room.players.delete(userId);
+      safeSend(room.host, { type: "PLAYER_LEAVE", user: userId });
+    }
+
+    // Limpieza: si no hay host y no hay players, borramos sala
+    if (!room.host && room.players.size === 0) rooms.delete(roomCode);
+  });
+});
+
+server.listen(PORT, () => {
+  console.log("WS server on port", PORT);
+});

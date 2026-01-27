@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Jugador</title>
+  <style>
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      text-align: center;
+      background: radial-gradient(circle at top, #0a0a0a, #000);
+      color: white;
+    }
+
+    h2 {
+      margin-bottom: 10px;
+    }
+
+.option {
+  height: 110px;
+  font-size: 1.4em;
+  font-weight: bold;
+  border-radius: 16px;
+
+  background: #000;
+  color: white;
+
+  border: 3px solid currentColor;
+
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  animation: neonPulse 2.2s ease-in-out infinite;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.option:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 28px currentColor;
+}
+
+
+.option:nth-child(1) {
+  color: #ff2d2d;
+}
+
+.option:nth-child(2) {
+  color: #2979ff;
+}
+
+.option:nth-child(3) {
+  color: #00c853;
+}
+
+.option:nth-child(4) {
+  color: #ff9100;
+}
+
+
+
+.option.selected {
+  border-width: 4px;
+  box-shadow: 0 0 45px currentColor;
+  animation: none;
+}
+
+.option.disabled {
+  opacity: 0.35;
+  filter: grayscale(1);
+  cursor: not-allowed;
+  animation: none;
+  pointer-events: none;
+}
+
+#overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+#loginModal {
+  background: white;
+  padding: 25px;
+  border-radius: 10px;
+  width: 320px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+#loginModal input {
+  width: 100%;
+  margin: 8px 0;
+  padding: 10px;
+  font-size: 1em;
+}
+
+#loginModal button {
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px;
+  font-size: 1em;
+  cursor: pointer;
+}
+
+#loginError {
+  color: red;
+  font-size: 0.9em;
+  margin-top: 8px;
+}
+
+#emojiSelector {
+  margin-top: 12px;
+}
+
+#emojiGrid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.emoji {
+  font-size: 1.4em;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  transition: transform 0.1s, background 0.1s;
+}
+
+.emoji:hover {
+  background: #f0f0f0;
+  transform: scale(1.2);
+}
+
+.emoji.selected {
+  background: #0dcaf0;
+  color: white;
+}
+
+#title {
+  font-size: 2em;
+  text-shadow: 0 0 12px #00e5ff;
+}
+
+/* ===========
+   USER POINTS
+   =========== */
+
+#pointsBox {
+  margin-bottom: 12px;
+  font-size: 1.1em;
+  font-weight: bold;
+  color: #0dcaf0;
+}
+
+/* ===========
+     OPTIONS
+   =========== */
+
+#options {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+  max-width: 700px;
+  margin: 30px auto;
+}
+
+/* ===========
+   NEON STYLE
+   =========== */
+
+@keyframes neonPulse {
+  0% {
+    box-shadow: 0 0 10px currentColor;
+  }
+  50% {
+    box-shadow: 0 0 22px currentColor;
+  }
+  100% {
+    box-shadow: 0 0 10px currentColor;
+  }
+}
+
+
+  </style>
+</head>
+<body>
+
+<div id="overlay">
+  <div id="loginModal">
+
+        <!-- PASO 1 -->
+    <div id="stepRoom" style="color:black">
+      <h2>Código del juego</h2>
+      <input id="roomCodeInput" placeholder="Código del juego" />
+      <button id="roomBtn">Entrar</button>
+      <p class="error" id="roomError"></p>
+    </div>
+
+   <!-- PASO 2 -->
+    <div id="stepProfile" style="display:none; color:black">
+      <h2>Tu perfil</h2>
+
+      <input id="studentIdInput" placeholder="ID de estudiante" />
+      <input id="nipInput" placeholder="NIP (4 cifras)" type="password" />
+      <input id="nicknameInput" placeholder="Nickname" />
+
+<div id="emojiSelector">
+  <p>Elige un emoji:</p>
+  <div id="emojiGrid">
+    <span class="emoji">😄</span>
+    <span class="emoji">🔥</span>
+    <span class="emoji">🎧</span>
+    <span class="emoji">🎸</span>
+    <span class="emoji">⚡</span>
+    <span class="emoji">🧠</span>
+    <span class="emoji">👑</span>
+    <span class="emoji">🚀</span>
+    <span class="emoji">💀</span>
+  </div>
+</div>
+
+      <button id="loginBtn">Entrar al juego</button>
+      <p class="error" id="loginError"></p>
+    </div>
+
+  </div>
+</div>
+
+<div id="pointsBox">⭐ Puntos: <span id="pointsValue">0</span></div>
+
+<h2 id="title">Esperando pregunta…</h2>
+<div id="options"></div>
+
+<script type="module">
+
+const WS_URL = "wss://TU-BACKEND-WS.onrender.com"; 
+// en local: ws://localhost:3000
+
+
+let selectedEmoji = null;
+let roomCode = null;
+let channel = null;
+let userId = null;
+let userNickname = null;
+
+let playerState = "WAITING";
+// WAITING | ANSWERING | ANSWERED
+
+const pointsValue = document.getElementById("pointsValue");
+
+let totalPoints = Number(sessionStorage.getItem("totalPoints") || 0);
+pointsValue.textContent = totalPoints;
+
+
+const studentIdInput = document.getElementById("studentIdInput");
+const nipInput = document.getElementById("nipInput");
+const nicknameInput = document.getElementById("nicknameInput");
+const loginError = document.getElementById("loginError");
+
+const roomError = document.getElementById("roomError");
+
+document.getElementById("roomBtn").addEventListener("click", () => {
+  const code = document.getElementById("roomCodeInput").value.trim();
+
+  if (!code) {
+    roomError.textContent = "Ingresa un código";
+    return;
+  }
+
+  roomError.textContent = "Verificando sala…";
+  verifyRoomCode(code);
+});
+
+
+async function verifyRoomCode(code) {
+  roomError.textContent = "Verificando sala…";
+
+  const ws = new WebSocket(WS_URL);
+
+  const done = (ok) => {
+    try { ws.close(); } catch {}
+    if (!ok) {
+      roomError.textContent = "❌ Código de juego inválido o sala cerrada";
+      return;
+    }
+    roomCode = code;
+    document.getElementById("stepRoom").style.display = "none";
+    document.getElementById("stepProfile").style.display = "block";
+    roomError.textContent = "";
+  };
+
+  const timeout = setTimeout(() => done(false), 1500);
+
+  ws.onopen = () => {
+    ws.send(JSON.stringify({ type: "ROOM_CHECK", roomCode: code }));
+  };
+
+  ws.onmessage = (ev) => {
+    let msg;
+    try { msg = JSON.parse(ev.data); } catch { return; }
+    if (msg.type === "ROOM_OK") { clearTimeout(timeout); done(true); }
+    if (msg.type === "ROOM_NO") { clearTimeout(timeout); done(false); }
+  };
+
+  ws.onerror = () => { clearTimeout(timeout); done(false); };
+}
+
+
+
+async function validateLogin(studentId, nip) {
+  const res = await fetch("../data/students.json");
+  const students = await res.json();
+
+  return students[studentId] === nip;
+}
+
+const overlay = document.getElementById("overlay");
+
+
+function markSelectedEmoji() {
+  document.querySelectorAll(".emoji").forEach(el => {
+    el.classList.toggle("selected", el.textContent === selectedEmoji);
+  });
+}
+
+document.querySelectorAll(".emoji").forEach(el => {
+  el.addEventListener("click", () => {
+    selectedEmoji = el.textContent;
+    markSelectedEmoji();
+  });
+});
+
+
+
+document.getElementById("loginBtn").addEventListener("click", async () => {
+  const studentId = studentIdInput.value.trim();
+  const nip = nipInput.value.trim();
+  const nickname = nicknameInput.value.trim();
+
+  if (!studentId || !nip || !nickname) {
+    loginError.textContent = "Completa todos los campos";
+    return;
+  }
+
+  if (nip.length !== 4) {
+    loginError.textContent = "NIP inválido";
+    return;
+  }
+
+  if (!/^[\w\s]{1,16}$/.test(nickname)) {
+    loginError.textContent = "Nickname inválido";
+    return;
+  }
+
+  const valid = await validateLogin(studentId, nip);
+  if (!valid) {
+    loginError.textContent = "ID o NIP incorrectos";
+    return;
+  }
+
+  // ✔️ activar jugador
+  initPlayerConnection(studentId, nickname);
+  overlay.style.display = "none";
+});
+
+
+
+let currentWordId = null;
+let openedAt = null;
+let questionOpen = false;
+let lastAnswer = null;
+
+let currentOptions = [];
+
+// ================================
+// 🔐 Seguridad de canal (PLAYER)
+// ================================
+
+let trustedSignature = null;
+
+const PLAYER_ALLOWED = new Set([
+  "OPEN",
+  "CLOSE",
+  "QUESTION_RESULT",
+  "GAME_RESET",
+  "HOST_ONLINE"
+]);
+
+
+// ================================
+// Helpers
+// ================================
+
+function initPlayerConnection(studentId, nickname, isReconnect = false) {
+  channel = new WebSocket(WS_URL);
+  userId = studentId;
+  userNickname = nickname;
+
+  sessionStorage.setItem("playerProfile", JSON.stringify({
+    studentId,
+    nickname,
+    emoji: selectedEmoji || "🙂",
+    roomCode
+  }));
+
+  channel.onopen = () => {
+    channel.send(JSON.stringify({
+      type: "HELLO",
+      role: "PLAYER",
+      roomCode,
+      userId: studentId,
+      nickname,
+      emoji: selectedEmoji || "🙂"
+    }));
+
+    // equivalente a tu PLAYER_JOIN / REJOIN
+    channel.send(JSON.stringify({
+      type: "PLAYER_TO_HOST",
+      payload: {
+        type: isReconnect ? "PLAYER_REJOIN" : "PLAYER_JOIN",
+        user: studentId,
+        nickname,
+        emoji: selectedEmoji || "🙂"
+      }
+    }));
+  };
+
+  channel.onmessage = (ev) => {
+    let msg;
+    try { msg = JSON.parse(ev.data); } catch { return; }
+    handleGameMessages({ data: msg }); // reutilizas tu handler tal cual
+  };
+
+  channel.onclose = () => {
+    // opcional: UI de reconexión
+  };
+}
+
+
+setInterval(() => {
+  if (!channel || channel.readyState !== WebSocket.OPEN || !userId) return;
+
+  channel.send(JSON.stringify({
+    type: "PLAYER_TO_HOST",
+    payload: {
+      type: "PLAYER_ALIVE",
+      user: userId,
+      nickname: userNickname,
+      emoji: selectedEmoji || "🙂"
+    }
+  }));
+}, 5000);
+
+
+
+function handleGameMessages(e) {
+  const msg = e.data;
+  if (!PLAYER_ALLOWED.has(msg.type)) return;
+
+  // =====================
+  // HOST ABRE PREGUNTA
+  // =====================
+  if (msg.type === "OPEN") {
+    if (!trustedSignature) trustedSignature = msg.sig;
+    if (msg.sig !== trustedSignature) return;
+
+    if (playerState !== "WAITING") return;
+    if (sessionStorage.getItem("answeredWordId") === String(msg.wordId)) return;
+
+    openQuestion(msg.wordId, msg.openedAt, msg.options);
+    return;
+  }
+
+  // =====================
+  // HOST CIERRA PREGUNTA
+  // =====================
+  if (msg.type === "CLOSE") {
+    showWaiting();
+    return;
+  }
+
+  // =====================
+  // RESULTADOS
+  // =====================
+  if (msg.type === "QUESTION_RESULT") {
+    const earned = msg.scores?.[userId] || 0;
+    totalPoints += earned;
+    sessionStorage.setItem("totalPoints", totalPoints);
+    pointsValue.textContent = totalPoints;
+    return;
+  }
+
+  // =====================
+  // RESET DE SALA
+  // =====================
+  if (msg.type === "GAME_RESET") {
+    sessionStorage.removeItem("playerProfile");
+    location.reload();
+    return;
+  }
+}
+
+
+function showWaiting() {
+  playerState = "WAITING";
+  questionOpen = false;
+
+  document.getElementById("title").textContent =
+    "⏳ Esperando siguiente pregunta…";
+
+  document.getElementById("options").innerHTML = "";
+}
+
+
+// ================================
+// Abrir pregunta
+// ================================
+function openQuestion(wordId, openedTime, options) {
+  playerState = "ANSWERING";
+  questionOpen = true;
+
+  currentWordId = wordId;
+  openedAt = openedTime;
+  lastAnswer = null;
+  currentOptions = options;
+
+  document.getElementById("title").textContent =
+    "¿Qué palabra escuchaste?";
+
+  renderOptions();
+  sessionStorage.setItem("currentQuestion", JSON.stringify({
+   wordId,
+   openedAt,
+   options
+  }));
+ 
+}
+
+// ================================
+// Renderizar opciones
+// (mock por ahora; luego vendrán dinámicas)
+// ================================
+function renderOptions() {
+  const container = document.getElementById("options");
+  container.innerHTML = "";
+
+  currentOptions.forEach(opt => {
+    const btn = document.createElement("button");
+    btn.textContent = opt;
+    btn.className = "option";
+
+    btn.onclick = () => {
+      if (!questionOpen) return;
+      selectOption(opt, btn);
+    };
+
+    container.appendChild(btn);
+  });
+}
+
+// ================================
+// Seleccionar / cambiar respuesta
+// ================================
+function selectOption(answer, btn) { 
+  if (playerState !== "ANSWERING") return;
+  // 🚫 bloquear si la pregunta no está abierta
+  // 🚫 o si ya respondió
+  if (!questionOpen || lastAnswer !== null) return;
+
+playerState = "ANSWERED";
+lastAnswer = answer;
+btn.classList.add("selected");
+
+document.querySelectorAll(".option").forEach(b => {
+  b.disabled = true;
+  b.classList.add("disabled");
+});
+
+channel.send(JSON.stringify({
+  type: "ANSWER",
+  user: userId,
+  wordId: currentWordId,
+  answer,
+  timestamp: Date.now()
+}));
+
+
+
+// 🔒 marcar que esta pregunta ya fue respondida
+sessionStorage.setItem("answeredWordId", currentWordId);
+
+document.getElementById("title").textContent = "Respuesta enviada ✔️";
+
+}
+
+
+// ================================
+
+
+// 🔁 Auto-reconexión si ya había perfil
+const saved = sessionStorage.getItem("playerProfile");
+if (saved) {
+  try {
+    const p = JSON.parse(saved);
+    if (p.roomCode && p.studentId && p.nickname) {
+      roomCode = p.roomCode;
+      selectedEmoji = p.emoji || "🙂";
+      markSelectedEmoji();
+      initPlayerConnection(p.studentId, p.nickname, true);
+      overlay.style.display = "none";
+    }
+  } catch (_) {}
+}
+
+/* ESTOY COMENTANDO ESTE BLOQUE PORQUE HACIA QUE LA PRIMERA PREGUNTA SE MOSTRARA ANTES
+DE LLEGAR AL VERSO CORRESPONDIENTE
+
+const savedQuestion = sessionStorage.getItem("currentQuestion");
+const answeredWordId = sessionStorage.getItem("answeredWordId");
+
+if (savedQuestion) {
+  try {
+    const q = JSON.parse(savedQuestion);
+    openQuestion(q.wordId, q.openedAt, q.options);
+
+    // 🚫 si ya respondió esta pregunta, bloquear UI
+    if (answeredWordId === q.wordId) {
+      questionOpen = false;
+
+      document.getElementById("title").textContent =
+        "Respuesta enviada ✔️";
+
+      document.querySelectorAll(".option").forEach(btn => {
+        btn.classList.add("disabled");
+        btn.disabled = true;
+      });
+    }
+
+  } catch (_) {}
+
+}
+
+*/
+
+</script>
+</body>
+</html>

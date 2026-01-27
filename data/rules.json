@@ -1,0 +1,14 @@
+{
+  "version": "1.0",
+  "type": "rules",
+  "rules": {
+    "basePoints": 1000,
+    "speedBonus": [
+      { "maxMs": 3000, "points": 500 },
+      { "maxMs": 8000, "points": 350 },
+      { "maxMs": 30000, "points": 100 }
+    ],
+    "answerChangePolicy": "last-answer-wins",
+    "questionClosePolicy": "manual-or-all-answered"
+  }
+}
