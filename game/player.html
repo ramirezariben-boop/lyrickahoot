@@ -283,14 +283,14 @@ document.getElementById("roomBtn").addEventListener("click", () => {
   }
 
   roomError.textContent = "Verificando sala…";
-  verifyRoomCode(code);
+  verifyRoomCode(code, WS_URL);
 });
 
 
-async function verifyRoomCode(code) {
+async function verifyRoomCode(code, wsUrl) {
   roomError.textContent = "Verificando sala…";
 
-  const ws = new WebSocket(WS_URL);
+  const ws = new WebSocket(wsUrl);
 
   const done = (ok) => {
     try { ws.close(); } catch {}
@@ -317,7 +317,10 @@ async function verifyRoomCode(code) {
     if (msg.type === "ROOM_NO") { clearTimeout(timeout); done(false); }
   };
 
-  ws.onerror = () => { clearTimeout(timeout); done(false); };
+  ws.onerror = () => {
+    clearTimeout(timeout);
+    done(false);
+  };
 }
 
 
@@ -374,7 +377,7 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
   }
 
   // ✔️ activar jugador
-  initPlayerConnection(studentId, nickname);
+  initPlayerConnection(studentId, nickname, WS_URL);
   overlay.style.display = "none";
 });
 
@@ -406,8 +409,8 @@ const PLAYER_ALLOWED = new Set([
 // Helpers
 // ================================
 
-function initPlayerConnection(studentId, nickname, isReconnect = false) {
-  channel = new WebSocket(WS_URL);
+function initPlayerConnection(studentId, nickname, wsUrl, isReconnect = false) {
+  channel = new WebSocket(wsUrl);
   userId = studentId;
   userNickname = nickname;
 
@@ -621,7 +624,7 @@ if (saved) {
       roomCode = p.roomCode;
       selectedEmoji = p.emoji || "🙂";
       markSelectedEmoji();
-      initPlayerConnection(p.studentId, p.nickname, true);
+      initPlayerConnection(p.studentId, p.nickname, WS_URL, true);
       overlay.style.display = "none";
     }
   } catch (_) {}
