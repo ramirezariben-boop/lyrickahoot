@@ -23,12 +23,43 @@ function broadcastToPlayers(room, msg) {
   for (const ws of room.players.values()) safeSend(ws, msg);
 }
 
-const server = http.createServer((req, res) => {
-  // healthcheck simple
+const server = http.createServer(async (req, res) => {
+  if (req.method === "POST" && req.url === "/api/pay-mxp") {
+    let body = "";
+    req.on("data", chunk => (body += chunk));
+    req.on("end", async () => {
+      try {
+        const parsed = JSON.parse(body);
+
+        const response = await fetch(
+          "https://classroom-trading.ariiben.com/api/update-multiple",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(parsed)
+          }
+        );
+
+        const data = await response.text();
+
+        res.writeHead(response.status, {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*"
+        });
+        res.end(data);
+      } catch (e) {
+        res.writeHead(500);
+        res.end(JSON.stringify({ error: "MXP proxy failed" }));
+      }
+    });
+    return;
+  }
+
   if (req.url === "/health") {
-    res.writeHead(200, { "content-type": "text/plain" });
+    res.writeHead(200);
     return res.end("ok");
   }
+
   res.writeHead(404);
   res.end();
 });

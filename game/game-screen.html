@@ -1384,14 +1384,11 @@ async function payMXP() {
   const changes = normalizeChanges(rawChanges);
 
   if (changes.length === 0) return;
-await fetch(
-  "https://classroom-trading.ariiben.com/api/update-multiple",
-  {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ changes })
-  }
-);
+await fetch("https://lyrickahoot.onrender.com/api/pay-mxp", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ changes })
+});
 
 }
 
