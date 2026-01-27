@@ -1379,18 +1379,7 @@ function computeMXP() {
 
 
 
-async function payMXP() {
-  const rawChanges = computeMXP();
-  const changes = normalizeChanges(rawChanges);
-
-  if (changes.length === 0) return;
-await fetch("https://lyrickahoot.onrender.com/api/pay-mxp", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ changes })
-});
-
-}
+ync function payMXP() {
 
 
 
