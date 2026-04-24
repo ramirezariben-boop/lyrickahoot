@@ -1,7 +1,7 @@
 import http from "http";
 import { WebSocketServer, WebSocket } from "ws";
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 // roomCode -> { host: ws|null, players: Map(studentId, ws), sig: string|null }
 const rooms = new Map();

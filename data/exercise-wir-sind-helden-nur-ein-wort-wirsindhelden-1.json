@@ -1,0 +1,33 @@
+{
+  "version": "1.0",
+  "type": "exercise",
+  "exercise": {
+    "id": "wir-sind-helden-nur-ein-wort-wirsindhelden-1",
+    "songId": "wir-sind-helden-nur-ein-wort",
+    "name": "WirSindHelden-1",
+    "description": "",
+    "questionWordIds": [
+      5,
+      10,
+      15,
+      21,
+      25,
+      38,
+      46,
+      54,
+      60,
+      67,
+      69,
+      116,
+      119,
+      128,
+      135,
+      147,
+      162,
+      171,
+      182,
+      238,
+      245
+    ]
+  }
+}

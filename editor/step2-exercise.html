@@ -36,7 +36,11 @@
 
 <input id="exerciseName" placeholder="Nombre del ejercicio" />
 <br><br>
-<textarea id="exerciseDesc" placeholder="Descripción"></textarea>
+<textarea id="exerciseDesc" placeholder="Descripción (opcional)"></textarea>
+
+<p>Preguntas seleccionadas: <span id="selectedCount">0</span></p>
+<button onclick="selectAll()">Seleccionar Todo</button>
+<button onclick="clearSelection()">Limpiar Selección</button>
 
 <h3>Letra</h3>
 <div id="lyrics"></div>
@@ -71,6 +75,10 @@ function renderLyrics() {
       span.textContent = word.text;
       span.className = "word";
 
+      if (questionWordIds.has(word.id)) {
+        span.classList.add("selected");
+      }
+
       span.onclick = () => toggle(word.id, span);
 
       lineDiv.appendChild(span);
@@ -79,6 +87,8 @@ function renderLyrics() {
 
     container.appendChild(lineDiv);
   });
+
+  updateSelectedCount();
 }
 
 function toggle(id, span) {
@@ -89,23 +99,66 @@ function toggle(id, span) {
     questionWordIds.add(id);
     span.classList.add("selected");
   }
+  updateSelectedCount();
+}
+
+function updateSelectedCount() {
+  document.getElementById("selectedCount").textContent = questionWordIds.size;
+}
+
+function selectAll() {
+  lyricsBase.words.forEach(word => {
+    if (!questionWordIds.has(word.id)) {
+      questionWordIds.add(word.id);
+    }
+  });
+  renderLyrics();
+  updateSelectedCount();
+}
+
+function clearSelection() {
+  questionWordIds.clear();
+  renderLyrics();
+  updateSelectedCount();
 }
 
 function exportExercise() {
+  const name = document.getElementById("exerciseName").value.trim();
+  const desc = document.getElementById("exerciseDesc").value.trim();
+
+  if (!name) {
+    alert("Ingresa un nombre para el ejercicio.");
+    return;
+  }
+
+  if (questionWordIds.size === 0) {
+    alert("Selecciona al menos una palabra para pregunta.");
+    return;
+  }
+
   const json = {
     version: "1.0",
     type: "exercise",
     exercise: {
-      id: "exercise-01",
+      id: `exercise-${Date.now()}`, // ID único
       songId: lyricsBase.song.id,
-      name: document.getElementById("exerciseName").value,
-      description: document.getElementById("exerciseDesc").value,
+      name,
+      description: desc,
       questionWordIds: Array.from(questionWordIds)
     }
   };
 
-  console.log(JSON.stringify(json, null, 2));
-  alert("Ejercicio generado. Revisa la consola.");
+  const blob = new Blob([JSON.stringify(json, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${name.replace(/[^a-zA-Z0-9]/g, "_")}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  alert("Ejercicio descargado. Colócalo en la carpeta data/ del proyecto.");
 }
 </script>
 
