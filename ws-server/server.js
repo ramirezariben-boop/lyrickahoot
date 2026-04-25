@@ -3,12 +3,12 @@ import { WebSocketServer, WebSocket } from "ws";
 
 const PORT = process.env.PORT || 3001;
 
-// roomCode -> { host: ws|null, players: Map(studentId, ws), sig: string|null }
+// roomCode -> { host: ws|null, players: Map(studentId, ws), sig: string|null, currentQuestion: object|null }
 const rooms = new Map();
 
 function getRoom(code) {
   if (!rooms.has(code)) {
-    rooms.set(code, { host: null, players: new Map(), sig: null });
+    rooms.set(code, { host: null, players: new Map(), sig: null, currentQuestion: null });
   }
   return rooms.get(code);
 }
@@ -89,7 +89,8 @@ wss.on("connection", (ws) => {
 
     // Handshake mínimo
     if (msg.type === "HELLO") {
-      const { role, roomCode, userId } = msg;
+      const { role, roomCode } = msg;
+      const userId = msg.userId || msg.studentId || null;
       if (!role || !roomCode) return;
 
       ws.meta.role = role;
@@ -113,6 +114,7 @@ wss.on("connection", (ws) => {
         safeSend(ws, { type: "PLAYER_OK" });
         // avisar host
         safeSend(room.host, { type: "PLAYER_JOIN", user: userId, nickname: msg.nickname, emoji: msg.emoji });
+        if (room.currentQuestion) safeSend(ws, room.currentQuestion);
         return;
       }
     }
@@ -130,7 +132,7 @@ if (msg.type === "ANSWER") {
   if (ws.meta.role !== "PLAYER") return;
   const room = rooms.get(ws.meta.roomCode);
   if (!room) return;
-  safeSend(room.host, msg);
+  safeSend(room.host, { ...msg, user: msg.user || ws.meta.userId });
   return;
 }
 
@@ -141,6 +143,8 @@ if (msg.type === "ANSWER") {
 
       // guardamos una firma/sig por sala (similar a tu trustedSignature)
       if (msg.payload?.sig && !room.sig) room.sig = msg.payload.sig;
+      if (msg.payload?.type === "OPEN") room.currentQuestion = msg.payload;
+      if (msg.payload?.type === "CLOSE" || msg.payload?.type === "GAME_RESET") room.currentQuestion = null;
 
       broadcastToPlayers(room, msg.payload);
       return;
@@ -150,7 +154,7 @@ if (msg.type === "ANSWER") {
     if (msg.type === "PLAYER_TO_HOST") {
       const room = rooms.get(ws.meta.roomCode);
       if (!room) return;
-      safeSend(room.host, msg.payload);
+      safeSend(room.host, { ...msg.payload, user: msg.payload?.user || ws.meta.userId });
       return;
     }
   });
@@ -164,6 +168,7 @@ if (msg.type === "ANSWER") {
 
     if (role === "HOST" && room.host === ws) {
       room.host = null;
+      room.currentQuestion = null;
       broadcastToPlayers(room, { type: "GAME_RESET" }); // o HOST_OFFLINE
     }
 

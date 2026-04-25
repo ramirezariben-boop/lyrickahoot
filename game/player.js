@@ -193,6 +193,8 @@ function connectPlayer(isReconnect) {
       type: "HELLO",
       role: "PLAYER",
       roomCode,
+      userId: playerProfile.studentId,
+      studentId: playerProfile.studentId,
       authToken,
       nickname: playerProfile.nickname,
       emoji: playerProfile.emoji,
@@ -297,6 +299,8 @@ function submitAnswer(answer, button) {
 
   channel.send(JSON.stringify({
     type: "ANSWER",
+    user: userId || playerProfile.studentId,
+    userId: userId || playerProfile.studentId,
     wordId: currentQuestion.wordId,
     answer,
     timestamp: Date.now(),
@@ -320,6 +324,10 @@ function sendPlayerHeartbeat(type = "PLAYER_ALIVE") {
     type: "PLAYER_TO_HOST",
     payload: {
       type,
+      user: userId || playerProfile.studentId,
+      userId: userId || playerProfile.studentId,
+      nickname: playerProfile.nickname,
+      emoji: playerProfile.emoji,
     },
   }));
 }

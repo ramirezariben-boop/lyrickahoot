@@ -15,6 +15,7 @@ const DATA_DIR = path.join(__dirname, "data");
 const PORT = Number(process.env.PORT || 3000);
 const ADMIN_ID = Number(process.env.ADMIN_ID || 64);
 const ADMIN_PIN = process.env.ADMIN_PIN || "";
+const SESSION_SECRET = process.env.INTERNAL_API_SECRET || "dev-secret";
 const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
 const PUBLIC_DATA_TYPES = new Set(["lyrics-base", "exercise"]);
 const PUBLIC_DATA_FILES = new Set(["rules.json"]);
@@ -75,10 +76,43 @@ function createSession(user, extra = {}) {
   return token;
 }
 
+function verifySignedSessionToken(token) {
+  const [data, sig] = String(token || "").split(".");
+  if (!data || !sig) return null;
+
+  const expected = crypto.createHmac("sha256", SESSION_SECRET).update(data).digest("base64url");
+  const sigBuffer = Buffer.from(sig);
+  const expectedBuffer = Buffer.from(expected);
+
+  if (sigBuffer.length !== expectedBuffer.length || !crypto.timingSafeEqual(sigBuffer, expectedBuffer)) {
+    return null;
+  }
+
+  let payload;
+  try {
+    payload = JSON.parse(Buffer.from(data, "base64url").toString("utf8"));
+  } catch {
+    return null;
+  }
+
+  const createdAt = Number(payload.createdAt || 0);
+  if (!createdAt || now() - createdAt > SESSION_TTL_MS) {
+    return null;
+  }
+
+  const { isAdmin = false, createdAt: _createdAt, ...user } = payload;
+  return {
+    token,
+    createdAt,
+    user,
+    isAdmin: Boolean(isAdmin),
+  };
+}
+
 function getSession(token) {
   if (!token) return null;
   pruneExpiredSessions();
-  return sessions.get(token) || null;
+  return sessions.get(token) || verifySignedSessionToken(token);
 }
 
 function getRequestToken(req) {

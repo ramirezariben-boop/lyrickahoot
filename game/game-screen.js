@@ -353,6 +353,8 @@ function handleSocketMessage(msg) {
 }
 
 function touchPlayer(userId, nickname, emoji) {
+  if (userId === undefined || userId === null || String(userId).trim() === "") return;
+
   const normalizedUserId = String(userId);
   connectedPlayers.add(normalizedUserId);
   lastSeen.set(normalizedUserId, Date.now());
@@ -366,6 +368,8 @@ function touchPlayer(userId, nickname, emoji) {
 }
 
 function removePlayer(userId) {
+  if (userId === undefined || userId === null || String(userId).trim() === "") return;
+
   const normalizedUserId = String(userId);
   connectedPlayers.delete(normalizedUserId);
   lastSeen.delete(normalizedUserId);
@@ -385,6 +389,8 @@ function removePlayer(userId) {
 }
 
 function handleAnswer(msg) {
+  if (msg.user === undefined || msg.user === null || String(msg.user).trim() === "") return;
+
   const userId = String(msg.user);
 
   if (!currentQuestionState || !expectedPlayers.has(userId) || answers[userId]) {
