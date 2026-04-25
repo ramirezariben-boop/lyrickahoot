@@ -1,7 +1,7 @@
 const WS_URL =
   location.hostname === "localhost"
     ? "ws://localhost:3000"
-    : `wss://${location.host}`;
+    : "wss://lyrickahoot.onrender.com";
 
 const PLAYER_PROFILE_KEY = "PLAYER_PROFILE";
 const PLAYER_AUTH_TOKEN_KEY = "PLAYER_AUTH_TOKEN";

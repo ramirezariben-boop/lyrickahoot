@@ -3,7 +3,7 @@ import { getSpeedBonus } from "../shared/utils.js";
 const WS_URL =
   location.hostname === "localhost"
     ? "ws://localhost:3000"
-    : `wss://${location.host}`;
+    : "wss://lyrickahoot.onrender.com";
 
 const HOST_AUTH_TOKEN_KEY = "HOST_AUTH_TOKEN";
 const HOST_USER_KEY = "HOST_USER";
